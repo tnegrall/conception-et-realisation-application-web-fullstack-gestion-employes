@@ -1,0 +1,24 @@
+{
+  "name": "employee-management-app",
+  "version": "1.0.1",
+  "description": "Application Full-Stack de Gestion d'Employés",
+  "author": "Steven Christophino <stevenchristophino@gmail.com>",
+  "scripts": {
+    "start": "cd frontend && npm start",
+    "server": "cd backend && mvn spring-boot:run",
+    "frontend": "cd frontend && npm start",
+    "backend": "cd backend && mvn spring-boot:run",
+    "dev": "concurrently \"npm run server\" \"npm run frontend\"",
+    "install": "cd frontend && npm install && cd ../backend && mvn install -DskipTests"
+  },
+  "keywords": [
+    "Employee",
+    "Java",
+    "React",
+    "Spring Boot",
+    "Management",
+    "Gestion",
+    "Employés"
+  ],
+  "license": "MIT"
+}
