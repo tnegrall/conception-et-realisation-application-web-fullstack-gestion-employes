@@ -52,3 +52,4 @@ ls -lh docker-images-base.tar.gz
 log_info "Pour charger sur une autre machine:"
 log_info "  docker load < docker-images-base.tar.gz"
 
+

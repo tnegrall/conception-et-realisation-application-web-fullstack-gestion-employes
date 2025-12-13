@@ -12,11 +12,16 @@ FROM node:18-alpine AS build
 # ENV HTTPS_PROXY=http://proxy.example.com:8080
 # ENV NO_PROXY=localhost,127.0.0.1
 
-# Configuration npm pour éviter les timeouts
-ENV NPM_CONFIG_FETCH_TIMEOUT=300000
-ENV NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000
-ENV NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
-ENV NPM_CONFIG_FETCH_RETRIES=5
+# Configuration npm pour éviter les timeouts (valeurs augmentées)
+ENV NPM_CONFIG_FETCH_TIMEOUT=600000
+ENV NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=30000
+ENV NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=300000
+ENV NPM_CONFIG_FETCH_RETRIES=10
+ENV NPM_CONFIG_MAXSOCKETS=1
+ENV NPM_CONFIG_PROGRESS=false
+ENV NPM_CONFIG_PREFER_OFFLINE=false
+ENV NPM_CONFIG_AUDIT=false
+ENV NPM_CONFIG_FUND=false
 
 # Installer wget pour healthcheck
 RUN apk add --no-cache wget || echo "wget already installed"
@@ -27,11 +32,20 @@ WORKDIR /app
 # Copier les fichiers de dépendances d'abord (cache layer)
 COPY package*.json ./
 
-# Installer les dépendances avec retry
-RUN npm install --legacy-peer-deps || \
-    (sleep 10 && npm install --legacy-peer-deps) || \
-    (sleep 20 && npm install --legacy-peer-deps) || \
-    echo "Warning: Some dependencies may have failed"
+# Configurer npm registry et timeouts
+RUN npm config set fetch-timeout 600000 && \
+    npm config set fetch-retry-mintimeout 30000 && \
+    npm config set fetch-retry-maxtimeout 300000 && \
+    npm config set fetch-retries 10 && \
+    npm config set maxsockets 1
+
+# Installer les dépendances avec retry et stratégie robuste
+RUN npm cache clean --force || true && \
+    (npm install --legacy-peer-deps --prefer-offline --no-audit --no-fund || \
+     (echo "Retry 1..." && sleep 15 && npm cache clean --force && npm install --legacy-peer-deps --prefer-offline --no-audit --no-fund) || \
+     (echo "Retry 2..." && sleep 30 && npm cache clean --force && npm install --legacy-peer-deps --prefer-offline --no-audit --no-fund) || \
+     (echo "Retry 3..." && sleep 60 && npm cache clean --force && npm install --legacy-peer-deps --prefer-offline --no-audit --no-fund) || \
+     echo "Warning: Some dependencies may have failed, continuing...")
 
 # Copier le code source
 COPY . .

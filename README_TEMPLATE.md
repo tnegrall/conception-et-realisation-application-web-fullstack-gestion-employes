@@ -170,7 +170,7 @@ Une fois le backend démarré, accédez à la documentation Swagger :
 
 ### Commandes Utiles
 
-  ```bash
+```bash
 # Build des images
 docker-compose build
 
@@ -266,7 +266,7 @@ Les contributions sont les bienvenues ! Pour contribuer :
 
 ## 📄 Licence
 
-Ce projet est sous licence MIT.
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
 ## 👤 Auteur
 
@@ -286,3 +286,4 @@ Ce projet est sous licence MIT.
 ⭐ Si ce projet vous a aidé, n'hésitez pas à lui donner une étoile !
 
 📅 Dernière mise à jour : 2024-12-13
+
