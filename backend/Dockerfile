@@ -1,24 +1,26 @@
-FROM openjdk:11-jdk-slim
+FROM eclipse-temurin:11-jdk
 
 WORKDIR /app
 
-# Copie du fichier pom.xml et téléchargement des dépendances
+# Copie des fichiers Maven
 COPY pom.xml .
-COPY src ./src
+COPY .mvn .mvn
+COPY mvnw .
 
-# Construction de l'application
-RUN apt-get update && \
-    apt-get install -y maven && \
-    mvn clean package -DskipTests && \
-    apt-get remove -y maven && \
-    apt-get autoremove -y && \
-    rm -rf /var/lib/apt/lists/*
+# Rendre le wrapper Maven exécutable
+RUN chmod +x mvnw
 
-# Copie du JAR généré
-COPY target/*.jar app.jar
+# Téléchargement des dépendances
+RUN ./mvnw dependency:go-offline -B
+
+# Copie du code source
+COPY src src
+
+# Construction du projet
+RUN ./mvnw package -DskipTests
 
 # Exposition du port
 EXPOSE 8080
 
 # Commande de démarrage
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "target/*.jar"]
