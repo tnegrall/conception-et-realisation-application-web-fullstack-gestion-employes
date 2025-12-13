@@ -1,0 +1,20 @@
+{
+  "registry-mirrors": [],
+  "insecure-registries": [],
+  "max-concurrent-downloads": 3,
+  "max-concurrent-uploads": 5,
+  "default-ulimits": {
+    "nofile": {
+      "Hard": 64000,
+      "Name": "nofile",
+      "Soft": 64000
+    }
+  },
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2"
+}
+

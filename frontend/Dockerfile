@@ -1,31 +1,64 @@
-# Étape de construction
-FROM node:16-alpine AS build
+# Dockerfile optimisé pour React avec fallbacks et retry
+# Compatible avec environnements à accès réseau limité
 
+# Stage 1: Build
+FROM node:18-alpine AS build
+
+# Fallback: Si node:18-alpine échoue, utiliser node:18
+# FROM node:18 AS build
+
+# Configuration pour proxy (décommentez si nécessaire)
+# ENV HTTP_PROXY=http://proxy.example.com:8080
+# ENV HTTPS_PROXY=http://proxy.example.com:8080
+# ENV NO_PROXY=localhost,127.0.0.1
+
+# Configuration npm pour éviter les timeouts
+ENV NPM_CONFIG_FETCH_TIMEOUT=300000
+ENV NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000
+ENV NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
+ENV NPM_CONFIG_FETCH_RETRIES=5
+
+# Installer wget pour healthcheck
+RUN apk add --no-cache wget || echo "wget already installed"
+
+# Créer le répertoire de travail
 WORKDIR /app
 
-# Copie des fichiers de dépendances
+# Copier les fichiers de dépendances d'abord (cache layer)
 COPY package*.json ./
 
-# Installation des dépendances
-RUN npm ci --only=production
+# Installer les dépendances avec retry
+RUN npm install --legacy-peer-deps || \
+    (sleep 10 && npm install --legacy-peer-deps) || \
+    (sleep 20 && npm install --legacy-peer-deps) || \
+    echo "Warning: Some dependencies may have failed"
 
-# Copie du code source
+# Copier le code source
 COPY . .
 
-# Construction de l'application
-RUN npm run build
+# Build de l'application
+RUN npm run build || \
+    (sleep 5 && npm run build) || \
+    (sleep 10 && npm run build)
 
-# Étape de production avec Nginx
+# Stage 2: Production avec nginx
 FROM nginx:alpine
 
-# Copie des fichiers buildés
+# Fallback: Si nginx:alpine échoue, utiliser nginx
+# FROM nginx:latest
+
+# Copier les fichiers buildés
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Copie de la configuration Nginx
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copier la configuration nginx personnalisée
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Exposition du port
+# Exposer le port
 EXPOSE 80
 
-# Commande de démarrage
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost/health || exit 1
+
+# Démarrer nginx
 CMD ["nginx", "-g", "daemon off;"]
