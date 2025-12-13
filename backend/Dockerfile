@@ -2,22 +2,20 @@ FROM eclipse-temurin:11-jdk
 
 WORKDIR /app
 
-# Copie des fichiers Maven
+# Copie du pom.xml
 COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
 
-# Rendre le wrapper Maven exécutable
-RUN chmod +x mvnw
-
-# Téléchargement des dépendances
-RUN ./mvnw dependency:go-offline -B
+# Installation de Maven et compilation
+RUN apt-get update && \
+    apt-get install -y maven && \
+    mvn dependency:go-offline -B && \
+    apt-get clean
 
 # Copie du code source
-COPY src src
+COPY src ./src
 
 # Construction du projet
-RUN ./mvnw package -DskipTests
+RUN mvn package -DskipTests
 
 # Exposition du port
 EXPOSE 8080
