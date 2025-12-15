@@ -55,7 +55,7 @@ Application complète de gestion d'employés et de départements avec une archit
 
 ```bash
 # Cloner le repository
-git clone https://github.com/VOTRE_USERNAME/Gestion_employee.git
+git clone https://github.com/tnegral/Gestion_employee.git
 cd Gestion_employee
 
 # Build et démarrage
