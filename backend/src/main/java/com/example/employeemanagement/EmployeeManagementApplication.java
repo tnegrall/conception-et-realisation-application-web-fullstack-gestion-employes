@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Bean;
         termsOfService = "https://employee-management-fullstack-app.vercel.app/"
     )
 )
-@SecurityScheme(
+@SecurityScheme( 
     name = "bearerAuth",
     type = SecuritySchemeType.HTTP,
     scheme = "bearer",

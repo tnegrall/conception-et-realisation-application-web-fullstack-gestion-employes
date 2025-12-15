@@ -290,7 +290,7 @@ const Dashboard = () => {
         }}
       >
         <Typography variant="h5" sx={{ fontWeight: 700, marginBottom: 1 }}>
-          Welcome back, {username} 👋
+          Bon Retour, {username} 👋
         </Typography>
         <Typography variant="body1" sx={{ maxWidth: 620, opacity: 0.9 }}>
           Your organization pulse at a glance. Use the quick actions to keep your headcount, departments, and hiring momentum on track.
