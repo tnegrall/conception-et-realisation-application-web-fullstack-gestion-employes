@@ -9,7 +9,11 @@ export const API_URLS = {
   VERIFY_USERNAME: (username) => `${API_BASE_URL}/verify-username/${username}`,
   RESET_PASSWORD: `${API_BASE_URL}/reset-password`,
   EMPLOYEES: `${API_BASE_URL}/api/employees`,
-  DEPARTMENTS: `${API_BASE_URL}/api/departments`,
+  CONTRACTS: `${API_BASE_URL}/api/contracts`,
+  POSITIONS: `${API_BASE_URL}/api/positions`,
+  DOCUMENTS: `${API_BASE_URL}/api/documents`,
+  ORGANIZATION: `${API_BASE_URL}/api/organization`,
+  USERS: `${API_BASE_URL}/api/users`,
 };
 
 export default API_BASE_URL;

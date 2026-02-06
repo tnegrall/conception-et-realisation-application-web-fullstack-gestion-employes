@@ -51,6 +51,10 @@ const Login = () => {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('EMSusername', username);
+        if (data.email) {
+          localStorage.setItem('EMSemail', data.email);
+        }
+        localStorage.setItem('user', JSON.stringify(data));
         setSuccessOpen(true);
       } else {
         setError('Identifiants invalides. Veuillez réessayer.');
@@ -78,7 +82,7 @@ const Login = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #1E3C72 0%, #2A5298 100%)',
+        background: 'linear-gradient(135deg, #76c7c5 0%, #3aa7a4 100%)',
         padding: 2,
         borderRadius: 6,
       }}
@@ -98,8 +102,8 @@ const Login = () => {
       >
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-            color: '#1a1a1a',
+            background: 'linear-gradient(135deg, #c8ecea 0%, #9adad7 100%)',
+            color: '#0f172a',
             padding: { xs: 3, md: 5 },
             display: 'flex',
             flexDirection: 'column',
@@ -107,21 +111,27 @@ const Login = () => {
             gap: 2,
           }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>
-            Bon retour
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Box component="img" src="/LOGO_DGI_OK.png" alt="Direction Générale des Impôts" sx={{ height: 48, width: 'auto' }} />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              Direction Générale des Impôts
+            </Typography>
+          </Stack>
+          <Typography variant="h4" sx={{ fontWeight: 800, mt: 1 }}>
+            Espace sécurisé
           </Typography>
           <Typography>Connectez-vous pour accéder à votre tableau de bord, gérer les employés et maintenir votre organisation.</Typography>
           <Stack spacing={1}>
             <Typography sx={{ fontWeight: 600 }}>Pourquoi se connecter ?</Typography>
             <Typography variant="body2">• Accéder en toute sécurité au tableau de bord riche en informations.</Typography>
-            <Typography variant="body2">• Gérer les équipes, départements et mises à jour en un seul endroit.</Typography>
+            <Typography variant="body2">• Gérer les équipes, organismes et mises à jour en un seul endroit.</Typography>
             <Typography variant="body2">• Reprendre où vous vous êtes arrêté avec votre session sauvegardée.</Typography>
           </Stack>
         </Box>
         <CardContent
           sx={{
             padding: { xs: 3, md: 4 },
-            background: 'rgba(255, 255, 255, 0.9)',
+            background: 'rgba(255, 255, 255, 0.96)',
             backdropFilter: 'blur(8px)',
           }}
         >
@@ -133,13 +143,15 @@ const Login = () => {
               Veuillez vous connecter pour continuer vers <strong>{redirectPath}</strong>.
             </Alert>
           )}
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} aria-label="Formulaire de connexion DGI">
             <Stack spacing={2}>
               <TextField
                 fullWidth
                 label="Nom d'utilisateur"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
+                inputProps={{ 'aria-label': "Nom d'utilisateur", autoComplete: 'username' }}
+                aria-invalid={Boolean(error)}
                 InputProps={{
                   style: {
                     fontFamily: 'Poppins, sans-serif',
@@ -152,6 +164,7 @@ const Login = () => {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
+                inputProps={{ 'aria-label': 'Mot de passe', autoComplete: 'current-password' }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -166,31 +179,36 @@ const Login = () => {
                 }}
               />
               {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <CircularProgress />
+                <Box sx={{ display: 'flex', justifyContent: 'center' }} aria-busy="true">
+                  <CircularProgress aria-label="Chargement" />
                 </Box>
               ) : (
-                <Button fullWidth variant="contained" color="primary" type="submit" sx={{ paddingY: 1.2 }}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  type="submit"
+                  sx={{ paddingY: 1.2, backgroundColor: '#3aa7a4', '&:hover': { backgroundColor: '#2f8f8d' } }}
+                >
                   Se connecter
                 </Button>
               )}
               {error && (
-                <Typography color="error" textAlign="center" sx={{ marginTop: '-0.5rem' }}>
+                <Alert severity="error" variant="outlined" sx={{ mt: 1 }} role="alert" aria-live="polite">
                   {error}
-                </Typography>
+                </Alert>
               )}
               <Divider />
               <Stack spacing={1} alignItems="center">
-                <Typography variant="body2">
-                  Vous n'avez pas de compte ?{' '}
-                  <Button color="primary" component="a" href="/register" size="small">
-                    S'inscrire
+                <Typography variant="body2" sx={{ color: '#334155' }}>
+                  Mot de passe oublié ?{' '}
+                  <Button component="a" href="/verify-username" size="small" sx={{ color: '#0f766e' }}>
+                    Réinitialiser le mot de passe
                   </Button>
                 </Typography>
-                <Typography variant="body2">
-                  Mot de passe oublié ?{' '}
-                  <Button color="primary" component="a" href="/verify-username" size="small">
-                    Réinitialiser le mot de passe
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  © Direction Générale des Impôts · Mentions légales ·{' '}
+                  <Button component="a" href="/dashboard" size="small" sx={{ color: '#0f766e', textTransform: 'none', padding: 0 }}>
+                    Aide
                   </Button>
                 </Typography>
               </Stack>

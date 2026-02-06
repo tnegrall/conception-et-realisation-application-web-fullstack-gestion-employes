@@ -42,6 +42,7 @@ public class AuthController {
   @Autowired
   private UserRepository userRepository;
 
+
   /** The password encoder. */
   @Autowired
   private PasswordEncoder passwordEncoder;
@@ -66,13 +67,19 @@ public class AuthController {
   @PostMapping("/register")
   public ResponseEntity<?> registerUser(@RequestBody User user) {
     try {
+      if (userRepository.count() > 0) {
+          return ResponseEntity.status(HttpStatus.CONFLICT).body("Erreur : un seul compte RH est autorisé");
+      }
+      if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+          return ResponseEntity.status(HttpStatus.CONFLICT).body("Erreur : l'email existe déjà");
+      }
       user.setPassword(passwordEncoder.encode(user.getPassword()));
       userRepository.save(user);
-      return ResponseEntity.ok("User registered successfully!");
+      return ResponseEntity.ok("Utilisateur enregistré avec succès !");
     } catch (DataIntegrityViolationException e) {
-      return ResponseEntity.status(HttpStatus.CONFLICT).body("Error: Username already exists");
+      return ResponseEntity.status(HttpStatus.CONFLICT).body("Erreur : le nom d'utilisateur existe déjà");
     } catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: Unable to register user");
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur : impossible d'enregistrer l'utilisateur");
     }
   }
 
@@ -100,14 +107,22 @@ public class AuthController {
       final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
       final String jwt = jwtTokenUtil.generateToken(userDetails.getUsername());
 
-      Map<String, String> response = new HashMap<>();
+      Map<String, Object> response = new HashMap<>();
       response.put("token", jwt);
+      response.put("username", userDetails.getUsername());
+
+      Optional<User> dbUser = userRepository.findByUsername(userDetails.getUsername());
+      dbUser.ifPresent(u -> {
+        response.put("userId", u.getId());
+        response.put("email", u.getEmail());
+      });
+
       return ResponseEntity.ok(response);
 
     } catch (BadCredentialsException e) {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Error: Invalid username or password");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Erreur : nom d'utilisateur ou mot de passe invalide");
     } catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: Unable to authenticate");
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur : impossible d'authentifier l'utilisateur");
     }
   }
 
@@ -127,9 +142,9 @@ public class AuthController {
   public ResponseEntity<?> verifyUsername(@PathVariable String username) {
     Optional<User> user = userRepository.findByUsername(username);
     if (user.isPresent()) {
-      return ResponseEntity.ok("Username exists");
+      return ResponseEntity.ok("Le nom d'utilisateur existe");
     } else {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Error: Username not found");
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Erreur : nom d'utilisateur introuvable");
     }
   }
 
@@ -157,9 +172,9 @@ public class AuthController {
       User existingUser = user.get();
       existingUser.setPassword(passwordEncoder.encode(newPassword));
       userRepository.save(existingUser);
-      return ResponseEntity.ok("Password reset successfully");
+      return ResponseEntity.ok("Mot de passe réinitialisé avec succès");
     } else {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Error: Username not found");
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Erreur : nom d'utilisateur introuvable");
     }
   }
 }

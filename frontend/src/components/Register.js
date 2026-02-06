@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   TextField,
   Button,
@@ -14,6 +14,10 @@ import {
   DialogContent,
   DialogActions,
   Stack,
+  Checkbox,
+  FormControlLabel,
+  Alert,
+  Divider,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
@@ -23,7 +27,9 @@ import { useNavigate } from 'react-router-dom';
 import { API_URLS } from '../config/api';
 
 const Register = () => {
-  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState(''); // conservé pour compat backend si nécessaire
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -31,24 +37,91 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successOpen, setSuccessOpen] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [csrfToken, setCsrfToken] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let token = sessionStorage.getItem('csrfToken');
+    if (!token) {
+      const arr = new Uint8Array(16);
+      window.crypto.getRandomValues(arr);
+      token = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+      sessionStorage.setItem('csrfToken', token);
+    }
+    setCsrfToken(token);
+  }, []);
+
+  const passwordChecks = useMemo(() => {
+    const length = password.length >= 8;
+    const upper = /[A-Z]/.test(password);
+    const lower = /[a-z]/.test(password);
+    const digit = /[0-9]/.test(password);
+    const special = /[^A-Za-z0-9]/.test(password);
+    return { length, upper, lower, digit, special };
+  }, [password]);
+  const emailValid = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), [email]);
+  const passwordsMatch = password && confirmPassword && password === confirmPassword;
+  const formValid =
+    fullName.trim().length >= 2 &&
+    emailValid &&
+    passwordChecks.length &&
+    passwordChecks.upper &&
+    passwordChecks.lower &&
+    passwordChecks.digit &&
+    passwordChecks.special &&
+    passwordsMatch &&
+    termsAccepted;
+
+  const canAttemptRegister = () => {
+    const key = 'registerAttempts';
+    const now = Date.now();
+    const windowMs = 10 * 60 * 1000;
+    const maxAttempts = 5;
+    const raw = localStorage.getItem(key);
+    const attempts = raw ? JSON.parse(raw).filter(ts => now - ts < windowMs) : [];
+    if (attempts.length >= maxAttempts) return false;
+    attempts.push(now);
+    localStorage.setItem(key, JSON.stringify(attempts));
+    return true;
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
 
+    if (!canAttemptRegister()) {
+      setError("Trop de tentatives d'inscription. Réessayez dans quelques minutes.");
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError('Les mots de passe ne correspondent pas.');
       return;
     }
 
     setLoading(true);
 
     try {
+      const enc = new TextEncoder();
+      const digest = await crypto.subtle.digest('SHA-256', enc.encode(password));
+      const hashArray = Array.from(new Uint8Array(digest));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
       const response = await fetch(API_URLS.REGISTER, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-Password-Hash': hashHex,
+        },
+        body: JSON.stringify({
+          username: username || email,
+          email,
+          fullName,
+          password,
+        }),
       });
 
       setLoading(false);
@@ -57,11 +130,11 @@ const Register = () => {
         setSuccessOpen(true);
       } else {
         const data = await response.json();
-        setError(data.message || 'Error registering user. Please try again.');
+        setError(data.message || 'Erreur lors de l’inscription. Veuillez réessayer.');
       }
     } catch (err) {
       setLoading(false);
-      setError('Something went wrong. Please try again later.');
+      setError('Une erreur est survenue. Veuillez réessayer plus tard.');
     }
   };
 
@@ -85,7 +158,7 @@ const Register = () => {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #1E3C72 0%, #2A5298 100%)',
+        background: 'linear-gradient(135deg, #76c7c5 0%, #3aa7a4 100%)',
         padding: 2,
         borderRadius: 6,
       }}
@@ -103,8 +176,8 @@ const Register = () => {
       >
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-            color: '#1a1a1a',
+            background: 'linear-gradient(135deg, #c8ecea 0%, #9adad7 100%)',
+            color: '#0f172a',
             padding: { xs: 3, md: 5 },
             display: 'flex',
             flexDirection: 'column',
@@ -112,15 +185,23 @@ const Register = () => {
             gap: 2,
           }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>
-            Create your account
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Box component="img" src="/LOGO_DGI_OK.png" alt="Direction Générale des Impôts" sx={{ height: 48, width: 'auto' }} />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              Direction Générale des Impôts
+            </Typography>
+          </Stack>
+          <Typography variant="h4" sx={{ fontWeight: 800, mt: 1 }}>
+            Créez votre compte
           </Typography>
-          <Typography>Join the Employee Management platform to streamline onboarding, manage departments, and get insights fast.</Typography>
+          <Typography>
+            Rejoignez la plateforme de gestion des employés pour simplifier l’onboarding, gérer l'organisation et obtenir des insights rapidement.
+          </Typography>
           <Stack spacing={1.2}>
             {[
-              { icon: <RocketLaunchIcon />, text: 'Launch-ready in minutes' },
-              { icon: <ShieldIcon />, text: 'Secure access with protected routes' },
-              { icon: <CheckCircleIcon />, text: 'Export-ready data out of the box' },
+              { icon: <RocketLaunchIcon />, text: 'Prête à être utilisée en quelques minutes' },
+              { icon: <ShieldIcon />, text: 'Accès sécurisé avec routes protégées' },
+              { icon: <CheckCircleIcon />, text: 'Données prêtes à l’export par défaut' },
             ].map(item => (
               <Stack key={item.text} direction="row" spacing={1} alignItems="center">
                 {item.icon}
@@ -140,12 +221,38 @@ const Register = () => {
           }}
         >
           <Typography variant="h5" component="h2" textAlign="center" sx={{ marginBottom: '0.5rem', fontWeight: 700 }}>
-            Register
+            Inscription
           </Typography>
-          <form onSubmit={handleSubmit}>
+          {error && (
+            <Alert severity="error" variant="outlined" sx={{ mb: 1 }} role="alert" aria-live="polite">
+              {error}
+            </Alert>
+          )}
+          <form onSubmit={handleSubmit} aria-label="Formulaire d'inscription DGI">
             <TextField
               fullWidth
-              label="Username"
+              label="Nom complet"
+              value={fullName}
+              onChange={e => setFullName(e.target.value)}
+              sx={{ marginBottom: '1rem' }}
+              inputProps={{ 'aria-label': 'Nom complet', autoComplete: 'name' }}
+              InputProps={{ style: { fontFamily: 'Poppins, sans-serif' } }}
+            />
+            <TextField
+              fullWidth
+              label="Adresse email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              sx={{ marginBottom: '1rem' }}
+              error={Boolean(email) && !emailValid}
+              helperText={Boolean(email) && !emailValid ? 'Format email invalide' : ' '}
+              inputProps={{ 'aria-label': 'Adresse email', autoComplete: 'email' }}
+              InputProps={{ style: { fontFamily: 'Poppins, sans-serif' } }}
+            />
+            <TextField
+              fullWidth
+              label="Nom d’utilisateur"
               value={username}
               onChange={e => setUsername(e.target.value)}
               sx={{ marginBottom: '1rem' }}
@@ -157,7 +264,7 @@ const Register = () => {
             />
             <TextField
               fullWidth
-              label="Password"
+              label="Mot de passe"
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -175,13 +282,35 @@ const Register = () => {
                 },
               }}
             />
+            <Stack spacing={0.5} sx={{ mb: 1 }}>
+              <Typography variant="caption" sx={{ color: '#334155' }}>
+                Exigences de complexité:
+              </Typography>
+              <Typography variant="caption" sx={{ color: passwordChecks.length ? '#16a34a' : '#ef4444' }}>
+                • 8 caractères minimum
+              </Typography>
+              <Typography variant="caption" sx={{ color: passwordChecks.upper ? '#16a34a' : '#ef4444' }}>
+                • Au moins une majuscule
+              </Typography>
+              <Typography variant="caption" sx={{ color: passwordChecks.lower ? '#16a34a' : '#ef4444' }}>
+                • Au moins une minuscule
+              </Typography>
+              <Typography variant="caption" sx={{ color: passwordChecks.digit ? '#16a34a' : '#ef4444' }}>
+                • Au moins un chiffre
+              </Typography>
+              <Typography variant="caption" sx={{ color: passwordChecks.special ? '#16a34a' : '#ef4444' }}>
+                • Au moins un caractère spécial
+              </Typography>
+            </Stack>
             <TextField
               fullWidth
-              label="Confirm Password"
+              label="Confirmer le mot de passe"
               type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
               sx={{ marginBottom: '1rem' }}
+              error={Boolean(confirmPassword) && !passwordsMatch}
+              helperText={Boolean(confirmPassword) && !passwordsMatch ? 'Les mots de passe ne correspondent pas' : ' '}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -195,24 +324,36 @@ const Register = () => {
                 },
               }}
             />
+            <FormControlLabel
+              control={<Checkbox checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} />}
+              label={
+                <Typography variant="body2" sx={{ color: '#334155' }}>
+                  J’accepte les conditions d’utilisation
+                </Typography>
+              }
+              sx={{ mb: 1 }}
+            />
+            <Divider sx={{ mb: 1 }} />
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                 <CircularProgress />
               </Box>
             ) : (
-              <Button fullWidth variant="contained" color="primary" type="submit" sx={{ py: 1.2 }}>
-                Register
+              <Button
+                fullWidth
+                variant="contained"
+                type="submit"
+                disabled={!formValid}
+                sx={{ py: 1.2, backgroundColor: '#3aa7a4', '&:hover': { backgroundColor: '#2f8f8d' } }}
+                aria-disabled={!formValid}
+              >
+                S’inscrire
               </Button>
             )}
-            {error && (
-              <Typography color="error" textAlign="center" sx={{ marginTop: '1rem' }}>
-                {error}
-              </Typography>
-            )}
             <Typography textAlign="center" sx={{ marginTop: '1rem' }}>
-              Already have an account?{' '}
+              Vous avez déjà un compte ?{' '}
               <Button color="primary" component="a" href="/login">
-                Login
+                Se connecter
               </Button>
             </Typography>
           </form>
@@ -220,13 +361,16 @@ const Register = () => {
       </Card>
 
       <Dialog open={successOpen} onClose={() => setSuccessOpen(false)} aria-labelledby="register-success-title">
-        <DialogTitle id="register-success-title">Welcome aboard!</DialogTitle>
+        <DialogTitle id="register-success-title">Bienvenue à bord !</DialogTitle>
         <DialogContent>
-          <Typography variant="body1">Your account is ready. Head to login to access the dashboard.</Typography>
+          <Typography variant="body1">
+            Votre compte est prêt. Si la vérification par email est requise, vous recevrez un message avec les instructions. Rendez-vous sur la page de
+            connexion pour accéder au tableau de bord.
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button variant="contained" onClick={handleGoToLogin}>
-            Go to login
+            Aller à la connexion
           </Button>
         </DialogActions>
       </Dialog>

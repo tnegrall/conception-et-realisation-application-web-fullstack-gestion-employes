@@ -1,0 +1,68 @@
+services:
+  # MySQL Service (Same as Prod)
+  mysql:
+    image: mysql:8.0
+    container_name: employee-mysql-dev
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: employee_management
+      MYSQL_USER: employee_user
+      MYSQL_PASSWORD: employee_pass
+    ports:
+      - "3500:3306"
+    volumes:
+      - mysql_data_dev:/var/lib/mysql
+      - ./database.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - employee-network-dev
+
+  # Backend Dev (Hot Reload via Maven)
+  backend:
+    image: maven:3.9-eclipse-temurin-17
+    container_name: employee-backend-dev
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - ~/.m2:/root/.m2
+    command: mvn spring-boot:run -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    environment:
+      - "SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/employee_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      - "SPRING_DATASOURCE_USERNAME=employee_user"
+      - "SPRING_DATASOURCE_PASSWORD=employee_pass"
+      - "SPRING_JPA_HIBERNATE_DDL_AUTO=update"
+    ports:
+      - "8080:8080"
+      - "5005:5005" # Debug port
+    depends_on:
+      - mysql
+    networks:
+      - employee-network-dev
+
+  # Frontend Dev (Hot Reload via Node)
+  frontend:
+    image: node:18-alpine
+    container_name: employee-frontend-dev
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm start
+    environment:
+      - "REACT_APP_API_URL=http://localhost:8080"
+      - "CHOKIDAR_USEPOLLING=true"
+      - "CI=false"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - employee-network-dev
+
+volumes:
+  mysql_data_dev:
+
+networks:
+  employee-network-dev:
+    driver: bridge

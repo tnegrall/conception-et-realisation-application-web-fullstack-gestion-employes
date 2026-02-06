@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box, IconButton, Drawer, List, ListItem, ListItemText } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton, Drawer, List, ListItemText, ListItemButton } from '@mui/material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -35,6 +35,8 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('EMSusername');
+    localStorage.removeItem('EMSemail');
+    localStorage.removeItem('user');
     setIsLoggedIn(false);
     navigate('/login');
   };
@@ -42,31 +44,28 @@ const Navbar = () => {
   const drawerContent = (
     <Box sx={{ width: 250, backgroundColor: '#3f51b5', height: '100%', color: 'white' }} role="presentation">
       <List>
-        <ListItem button component={Link} to="/" selected={isActive('/')} onClick={handleDrawerToggle}>
+        <ListItemButton component={Link} to="/" selected={isActive('/')} onClick={handleDrawerToggle}>
           <ListItemText primary="Accueil" sx={{ color: isActive('/') ? '#ff9800' : 'white' }} />
-        </ListItem>
-        <ListItem button component={Link} to="/dashboard" selected={isActive('/dashboard')} onClick={handleDrawerToggle}>
+        </ListItemButton>
+        <ListItemButton component={Link} to="/dashboard" selected={isActive('/dashboard')} onClick={handleDrawerToggle}>
           <ListItemText primary="Tableau de bord" sx={{ color: isActive('/dashboard') ? '#ff9800' : 'white' }} />
-        </ListItem>
-        <ListItem button component={Link} to="/employees" selected={isActive('/employees')} onClick={handleDrawerToggle}>
+        </ListItemButton>
+        <ListItemButton component={Link} to="/employees" selected={isActive('/employees')} onClick={handleDrawerToggle}>
           <ListItemText primary="Employés" sx={{ color: isActive('/employees') ? '#ff9800' : 'white' }} />
-        </ListItem>
-        <ListItem button component={Link} to="/departments" selected={isActive('/departments')} onClick={handleDrawerToggle}>
-          <ListItemText primary="Départements" sx={{ color: isActive('/departments') ? '#ff9800' : 'white' }} />
-        </ListItem>
-        <ListItem button component={Link} to="/profile" selected={isActive('/profile')} onClick={handleDrawerToggle}>
+        </ListItemButton>
+        <ListItemButton component={Link} to="/organization" selected={isActive('/organization')} onClick={handleDrawerToggle}>
+          <ListItemText primary="Organigramme" sx={{ color: isActive('/organization') ? '#ff9800' : 'white' }} />
+        </ListItemButton>
+        <ListItemButton component={Link} to="/profile" selected={isActive('/profile')} onClick={handleDrawerToggle}>
           <ListItemText primary="Profil" sx={{ color: isActive('/profile') ? '#ff9800' : 'white' }} />
-        </ListItem>
-        <ListItem button component={Link} to="/login" selected={isActive('/login')} onClick={handleDrawerToggle}>
+        </ListItemButton>
+        <ListItemButton component={Link} to="/login" selected={isActive('/login')} onClick={handleDrawerToggle}>
           <ListItemText
             primary={isLoggedIn ? 'Déconnexion' : 'Connexion'}
             sx={{ color: isLoggedIn ? 'red' : isActive('/login') ? '#ff9800' : 'white' }}
             onClick={isLoggedIn ? handleLogout : null}
           />
-        </ListItem>
-        <ListItem button component={Link} to="/register" selected={isActive('/register')} onClick={handleDrawerToggle}>
-          <ListItemText primary="S'inscrire" sx={{ color: isActive('/register') ? '#ff9800' : 'white' }} />
-        </ListItem>
+        </ListItemButton>
       </List>
     </Box>
   );
@@ -83,20 +82,28 @@ const Navbar = () => {
         }}
       >
         <Toolbar>
-          <Typography
-            variant="h6"
+          <Box
             component={Link}
             to="/"
             sx={{
               flexGrow: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
               textDecoration: 'none',
               color: 'white',
-              fontSize: '1.5rem',
-              fontWeight: 600,
             }}
           >
-            Système de Gestion d'Employés
-          </Typography>
+            <Box
+              component="img"
+              src="/LOGO_DGI_OK.png"
+              alt="Direction Générale des Impôts"
+              sx={{ height: 40, width: 'auto' }}
+            />
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              Direction Générale des Impôts
+            </Typography>
+          </Box>
 
           {/* Render drawer icon for mobile view */}
           {isMobile ? (
@@ -113,7 +120,7 @@ const Navbar = () => {
                 sx={{
                   fontSize: '1rem',
                   fontWeight: 500,
-                  color: isActive('/') ? '#ff9800' : 'inherit',
+                  color: isActive('/') ? '#4dd0e1' : 'inherit',
                 }}
               >
                 Accueil
@@ -125,7 +132,7 @@ const Navbar = () => {
                 sx={{
                   fontSize: '1rem',
                   fontWeight: 500,
-                  color: isActive('/dashboard') ? '#ff9800' : 'inherit',
+                  color: isActive('/dashboard') ? '#4dd0e1' : 'inherit',
                 }}
               >
                 Tableau de bord
@@ -137,22 +144,34 @@ const Navbar = () => {
                 sx={{
                   fontSize: '1rem',
                   fontWeight: 500,
-                  color: isActive('/employees') ? '#ff9800' : 'inherit',
+                  color: isActive('/employees') ? '#4dd0e1' : 'inherit',
                 }}
               >
                 Employés
               </Button>
               <Button
-                color={isActive('/departments') ? 'primary' : 'inherit'}
+                color={isActive('/organization') ? 'primary' : 'inherit'}
                 component={Link}
-                to="/departments"
+                to="/organization"
                 sx={{
                   fontSize: '1rem',
                   fontWeight: 500,
-                  color: isActive('/departments') ? '#ff9800' : 'inherit',
+                  color: isActive('/organization') ? '#4dd0e1' : 'inherit',
                 }}
               >
-                Départements
+                Organigramme
+              </Button>
+              <Button
+                color={isActive('/job-templates') ? 'primary' : 'inherit'}
+                component={Link}
+                to="/job-templates"
+                sx={{
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  color: isActive('/job-templates') ? '#4dd0e1' : 'inherit',
+                }}
+              >
+                Postes Types
               </Button>
               <Button
                 color={isActive('/profile') ? 'primary' : 'inherit'}
@@ -161,7 +180,7 @@ const Navbar = () => {
                 sx={{
                   fontSize: '1rem',
                   fontWeight: 500,
-                  color: isActive('/profile') ? '#ff9800' : 'inherit',
+                  color: isActive('/profile') ? '#4dd0e1' : 'inherit',
                 }}
               >
                 Profil
@@ -173,7 +192,7 @@ const Navbar = () => {
                   sx={{
                     fontSize: '1rem',
                     fontWeight: 500,
-                    color: 'red', // Make logout button red
+                    color: '#ff5252', // Make logout button red
                   }}
                 >
                   Déconnexion
@@ -186,24 +205,12 @@ const Navbar = () => {
                   sx={{
                     fontSize: '1rem',
                     fontWeight: 500,
-                    color: isActive('/login') ? '#ff9800' : 'inherit',
+                    color: isActive('/login') ? '#4dd0e1' : 'inherit',
                   }}
                 >
                   Connexion
                 </Button>
               )}
-              <Button
-                color={isActive('/register') ? 'primary' : 'inherit'}
-                component={Link}
-                to="/register"
-                sx={{
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  color: isActive('/register') ? '#ff9800' : 'inherit',
-                }}
-              >
-                S'inscrire
-              </Button>
             </Box>
           )}
         </Toolbar>

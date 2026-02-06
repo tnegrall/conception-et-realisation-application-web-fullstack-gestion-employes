@@ -1,5 +1,9 @@
 import React from 'react';
-import { Box, Container, Grid, Typography, Link } from '@mui/material';
+import { Box, Container, Grid, Typography, Link, Stack } from '@mui/material';
+import PersonIcon from '@mui/icons-material/Person';
+import EmailIcon from '@mui/icons-material/Email';
+import PhoneIcon from '@mui/icons-material/Phone';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 const Footer = () => {
   return (
@@ -39,72 +43,74 @@ const Footer = () => {
       />
       <Container maxWidth="lg">
         <Grid container spacing={4}>
-          {/* About Section */}
           <Grid item xs={12} md={4}>
             <Typography variant="h6" sx={{ fontWeight: 600, marginBottom: '1rem' }}>
-              About Us
+              À propos
             </Typography>
             <Typography variant="body2">
-              We provide a comprehensive Employee Management System that helps you manage your employees and departments with ease. Our mission is to make HR
-              processes seamless and efficient.
+              Nous proposons un système complet de gestion des employés qui vous aide à gérer vos collaborateurs et votre organisation en toute simplicité. Notre
+              mission est de rendre les processus RH fluides et efficaces.
             </Typography>
           </Grid>
 
-          {/* Quick Links Section */}
           <Grid item xs={12} md={4}>
             <Typography variant="h6" sx={{ fontWeight: 600, marginBottom: '1rem' }}>
-              Quick Links
+              Liens rapides
             </Typography>
             <Box>
               <Link href="/" color="inherit" underline="none" sx={{ display: 'block', marginBottom: '0.5rem', '&:hover': { color: '#f57c00' } }}>
-                Home
+                Accueil
               </Link>
               <Link href="/dashboard" color="inherit" underline="none" sx={{ display: 'block', marginBottom: '0.5rem', '&:hover': { color: '#f57c00' } }}>
-                Dashboard
+                Tableau de bord
               </Link>
               <Link href="/employees" color="inherit" underline="none" sx={{ display: 'block', marginBottom: '0.5rem', '&:hover': { color: '#f57c00' } }}>
-                Employees
+                Employés
               </Link>
-              <Link href="/departments" color="inherit" underline="none" sx={{ display: 'block', marginBottom: '0.5rem', '&:hover': { color: '#f57c00' } }}>
-                Departments
+              <Link href="/organization" color="inherit" underline="none" sx={{ display: 'block', marginBottom: '0.5rem', '&:hover': { color: '#f57c00' } }}>
+                Organisation
               </Link>
               <Link href="/profile" color="inherit" underline="none" sx={{ display: 'block', marginBottom: '0.5rem', '&:hover': { color: '#f57c00' } }}>
-                Profile
+                Profil
               </Link>
               <Link href="/login" color="inherit" underline="none" sx={{ display: 'block', marginBottom: '0.5rem', '&:hover': { color: '#f57c00' } }}>
-                Login
+                Connexion
               </Link>
               <Link href="/register" color="inherit" underline="none" sx={{ display: 'block', '&:hover': { color: '#f57c00' } }}>
-                Register
+                Inscription
               </Link>
             </Box>
           </Grid>
 
-          {/* Contact Information Section */}
           <Grid item xs={12} md={4}>
             <Typography variant="h6" sx={{ fontWeight: 600, marginBottom: '1rem' }}>
-              Contact Us
+              Contact
             </Typography>
-            <Typography variant="body2">
-              Project Maintainer:{' '}
-              <Link href="https://github.com/hoangsonww" color="inherit" sx={{ textDecoration: 'underline', '&:hover': { color: '#f57c00' } }}>
-                Son Nguyen
-              </Link>
-            </Typography>
-            <Typography variant="body2">
-              Email:{' '}
-              <Link href="mailto:hoangson091104@gmail.com" color="inherit" sx={{ textDecoration: 'underline', '&:hover': { color: '#f57c00' } }}>
-                hoangson091104@gmail.com
-              </Link>
-            </Typography>
-            <Typography variant="body2">Phone: +1 (123) 456-7890</Typography>
-            <Typography variant="body2" sx={{ marginTop: '0.5rem' }}>
-              Address: 123 Employee St, Suite 100, New York, NY 10001
-            </Typography>
+            <Stack spacing={1}>
+              <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PersonIcon fontSize="small" sx={{ color: '#3aa7a4' }} />
+                Steven Christophino
+              </Typography>
+              <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <EmailIcon fontSize="small" sx={{ color: '#3aa7a4' }} />
+                <Link href="mailto:stevenchristophino@gmail.com" color="inherit" sx={{ textDecoration: 'none', '&:hover': { color: '#3aa7a4' } }}>
+                  stevenchristophino@gmail.com
+                </Link>
+              </Typography>
+              <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PhoneIcon fontSize="small" sx={{ color: '#3aa7a4' }} />
+                <Link href="tel:+261325591502" color="inherit" sx={{ textDecoration: 'none', '&:hover': { color: '#3aa7a4' } }}>
+                  +261 32 55 91 502
+                </Link>
+              </Typography>
+              <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LocationOnIcon fontSize="small" sx={{ color: '#3aa7a4' }} />
+                Ivato, Antananarivo
+              </Typography>
+            </Stack>
           </Grid>
         </Grid>
 
-        {/* Bottom Section */}
         <Box
           sx={{
             textAlign: 'center',
@@ -113,7 +119,7 @@ const Footer = () => {
             paddingTop: '1rem',
           }}
         >
-          <Typography variant="body2">© {new Date().getFullYear()} Employee Management System. All rights reserved.</Typography>
+          <Typography variant="body2">© {new Date().getFullYear()} Système de gestion des employés. Tous droits réservés.</Typography>
         </Box>
       </Container>
     </Box>

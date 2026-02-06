@@ -16,9 +16,16 @@ public class User {
   @Column(nullable = false, unique = true)
   private String username;
 
+  /** The email. */
+  @Column(nullable = false, unique = true)
+  private String email;
+
   /** The password. */
   @Column(nullable = false)
   private String password;
+
+  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  private Employee employee;
 
   // Getters and Setters
 
@@ -56,6 +63,24 @@ public class User {
    */
   public void setUsername(String username) {
     this.username = username;
+  }
+
+  /**
+   * Gets the email.
+   *
+   * @return The email
+   */
+  public String getEmail() {
+    return email;
+  }
+
+  /**
+   * Sets the email.
+   *
+   * @param email The email
+   */
+  public void setEmail(String email) {
+    this.email = email;
   }
 
   /**

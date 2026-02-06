@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getAllEmployees, deleteEmployee } from '../services/employeeService';
-import { getAllDepartments } from '../services/departmentService';
+import { getOrganizationStructure } from '../services/organizationService';
 import {
   Table,
   TableBody,
@@ -43,11 +43,16 @@ const EmployeeList = () => {
   const [deletingEmployeeId, setDeletingEmployeeId] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSnackbar, setShowSnackbar] = useState(false);
-  const [departments, setDepartments] = useState([]);
-  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [divisions, setDivisions] = useState([]);
+  const [divisionFilter, setDivisionFilter] = useState('all');
   const [ageFilter, setAgeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [denseRows, setDenseRows] = useState(false);
+
+  const formatNumberFR = value => {
+    if (value === null || value === undefined || Number.isNaN(value)) return '—';
+    return new Intl.NumberFormat('fr-FR').format(value);
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -65,8 +70,11 @@ const EmployeeList = () => {
         try {
           const data = await getAllEmployees();
           setEmployees(data);
-          const departmentData = await getAllDepartments();
-          setDepartments(departmentData);
+          const structure = await getOrganizationStructure();
+          const allDivisions = structure.flatMap(direction =>
+            (direction.serviceUnits || []).flatMap(service => service.divisions || [])
+          );
+          setDivisions(allDivisions);
         } catch (error) {
         }
         setLoading(false);
@@ -100,14 +108,20 @@ const EmployeeList = () => {
   };
 
   const handleResetFilters = () => {
-    setDepartmentFilter('all');
+    setDivisionFilter('all');
     setAgeFilter('all');
     setSortBy('name');
   };
 
   const handleExportCsv = () => {
-    const header = ['First Name', 'Last Name', 'Email', 'Age', 'Department'];
-    const rows = employees.map(emp => [emp.firstName || '', emp.lastName || '', emp.email || '', emp.age || '', emp.department?.name || 'Unassigned']);
+    const header = ['Prénom', 'Nom', 'Email', 'Âge', 'Organisme'];
+    const rows = employees.map(emp => [
+      emp.firstName || '',
+      emp.lastName || '',
+      emp.email || '',
+      emp.age || '',
+      emp.divisionName || 'Non attribué',
+    ]);
 
     const escapeCell = cell => `"${cell.toString().replace(/"/g, '""')}"`;
     const csv = [header, ...rows].map(row => row.map(escapeCell).join(',')).join('\n');
@@ -122,39 +136,33 @@ const EmployeeList = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleCopyEmail = email => {
-    if (!email) return;
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(email);
-    }
-  };
-
-  const handleMailTo = email => {
-    if (email) {
-      window.location.href = `mailto:${email}`;
-    }
+  const handleCopyEmail = (email) => {
+    navigator.clipboard.writeText(email);
   };
 
   const filteredEmployees = employees
     .filter(employee => {
+      const firstName = employee.firstName || '';
+      const lastName = employee.lastName || '';
+      const email = employee.email || '';
       const matchesSearch =
-        employee.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDepartment = departmentFilter === 'all' || String(employee.department?.id) === departmentFilter;
+        firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDivision = divisionFilter === 'all' || String(employee.divisionId) === divisionFilter;
       const matchesAge =
         ageFilter === 'all' ||
         (ageFilter === 'under30' && employee.age < 30) ||
         (ageFilter === '30to45' && employee.age >= 30 && employee.age <= 45) ||
         (ageFilter === '45plus' && employee.age > 45);
-      return matchesSearch && matchesDepartment && matchesAge;
+      return matchesSearch && matchesDivision && matchesAge;
     })
     .sort((a, b) => {
       if (sortBy === 'age') {
         return (a.age || 0) - (b.age || 0);
       }
-      if (sortBy === 'department') {
-        return (a.department?.name || 'Unassigned').localeCompare(b.department?.name || 'Unassigned');
+      if (sortBy === 'direction') {
+        return (a.divisionName || 'Non attribué').localeCompare(b.divisionName || 'Non attribué');
       }
       const nameA = `${a.firstName} ${a.lastName}`;
       const nameB = `${b.firstName} ${b.lastName}`;
@@ -164,12 +172,9 @@ const EmployeeList = () => {
   const totalEmployees = employees.length;
   const averageAge = employees.length > 0 ? Math.round(employees.reduce((sum, emp) => sum + (emp.age || 0), 0) / employees.length) : 0;
   const visibleCount = filteredEmployees.length;
-  const departmentsCount = departments.length;
 
-  const getInitials = (first, last) => {
-    const firstInitial = first?.[0] || '';
-    const lastInitial = last?.[0] || '';
-    return `${firstInitial}${lastInitial}`.toUpperCase();
+  const getInitials = (firstName, lastName) => {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
 
   if (loading) {
@@ -206,7 +211,7 @@ const EmployeeList = () => {
     <Box>
       <Snackbar open={showSnackbar} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }} sx={{ mt: 9 }}>
         <Alert onClose={handleCloseSnackbar} severity="warning" sx={{ width: '100%' }}>
-          You must be logged in to access the employee list.{' '}
+          Vous devez être connecté pour accéder à la liste des employés.{' '}
           <span
             onClick={handleLoginRedirect}
             style={{
@@ -218,7 +223,7 @@ const EmployeeList = () => {
             onMouseEnter={e => (e.target.style.color = '#f57c00')}
             onMouseLeave={e => (e.target.style.color = '#3f51b5')}
           >
-            Login
+            Se connecter
           </span>
         </Alert>
       </Snackbar>
@@ -226,9 +231,9 @@ const EmployeeList = () => {
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={1} sx={{ mb: 2 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            Employees
+            Employés
           </Typography>
-          <Typography color="text.secondary">Search, filter, and export your directory without leaving the page.</Typography>
+          <Typography color="text.secondary">Recherchez, filtrez et exportez votre annuaire sans quitter la page.</Typography>
         </Box>
         <Stack direction="row" spacing={1}>
           <Button
@@ -240,10 +245,10 @@ const EmployeeList = () => {
               '&:hover': { backgroundColor: '#1E3C72', color: '#fff', borderColor: '#1E3C72' },
             }}
           >
-            Export CSV
+            Exporter en CSV
           </Button>
           <Button variant="contained" component={Link} to="/add-employee">
-            Add Employee
+            Ajouter un employé
           </Button>
         </Stack>
       </Stack>
@@ -259,13 +264,13 @@ const EmployeeList = () => {
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              Total employees
+              Nombre total d'employés
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.5 }}>
-              {totalEmployees}
+              {formatNumberFR(totalEmployees)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Across all departments
+              Tous organismes confondus
             </Typography>
           </Paper>
         </Grid>
@@ -279,13 +284,13 @@ const EmployeeList = () => {
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              Visible now
+              Visibles actuellement
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.5 }}>
-              {visibleCount}
+              {formatNumberFR(visibleCount)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              After filters
+              Après application des filtres
             </Typography>
           </Paper>
         </Grid>
@@ -299,13 +304,13 @@ const EmployeeList = () => {
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              Departments
+              Organismes
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.5 }}>
-              {departmentsCount}
+              {formatNumberFR(divisions.length)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Available for assignment
+              Disponibles pour l'affectation
             </Typography>
           </Paper>
         </Grid>
@@ -319,13 +324,13 @@ const EmployeeList = () => {
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              Avg age
+              Âge moyen
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.5 }}>
-              {averageAge || '—'}
+              {averageAge ? formatNumberFR(averageAge) : '—'}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Across current roster
+              Sur la liste actuelle
             </Typography>
           </Paper>
         </Grid>
@@ -333,100 +338,106 @@ const EmployeeList = () => {
 
       <Paper sx={{ padding: 2, marginBottom: 2, boxShadow: 3, borderRadius: 2 }}>
         <Stack spacing={2}>
-          <TextField label="Search by name or email..." variant="outlined" value={searchTerm} onChange={handleSearchChange} fullWidth />
+          <TextField label="Rechercher par nom ou email..." variant="outlined" value={searchTerm} onChange={handleSearchChange} fullWidth />
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
             <FormControl fullWidth>
-              <InputLabel id="department-filter-label">Department</InputLabel>
+              <InputLabel id="division-filter-label">Organisme</InputLabel>
               <Select
-                labelId="department-filter-label"
-                value={departmentFilter}
-                label="Department"
+                labelId="division-filter-label"
+                value={divisionFilter}
+                label="Organisme"
                 onChange={e => {
-                  setDepartmentFilter(e.target.value);
+                  setDivisionFilter(e.target.value);
                   setPage(0);
                 }}
               >
-                <MenuItem value="all">All departments</MenuItem>
-                {departments.map(dept => (
-                  <MenuItem key={dept.id} value={String(dept.id)}>
-                    {dept.name}
+                <MenuItem value="all">Tous les organismes</MenuItem>
+                {divisions.map(div => (
+                  <MenuItem key={div.id} value={String(div.id)}>
+                    {div.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel id="age-filter-label">Age</InputLabel>
+              <InputLabel id="age-filter-label">Âge</InputLabel>
               <Select
                 labelId="age-filter-label"
                 value={ageFilter}
-                label="Age"
+                label="Âge"
                 onChange={e => {
                   setAgeFilter(e.target.value);
                   setPage(0);
                 }}
               >
-                <MenuItem value="all">All ranges</MenuItem>
-                <MenuItem value="under30">Under 30</MenuItem>
-                <MenuItem value="30to45">30 to 45</MenuItem>
+                <MenuItem value="all">Toutes les tranches</MenuItem>
+                <MenuItem value="under30">Moins de 30 ans</MenuItem>
+                <MenuItem value="30to45">30 à 45 ans</MenuItem>
                 <MenuItem value="45plus">45+</MenuItem>
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel id="sort-filter-label">Sort by</InputLabel>
+              <InputLabel id="sort-filter-label">Trier par</InputLabel>
               <Select
                 labelId="sort-filter-label"
                 value={sortBy}
-                label="Sort by"
+                label="Trier par"
                 onChange={e => {
                   setSortBy(e.target.value);
                   setPage(0);
                 }}
               >
-                <MenuItem value="name">Name</MenuItem>
-                <MenuItem value="department">Department</MenuItem>
-                <MenuItem value="age">Age</MenuItem>
+                <MenuItem value="name">Nom</MenuItem>
+                <MenuItem value="direction">Organisme</MenuItem>
+                <MenuItem value="age">Âge</MenuItem>
               </Select>
             </FormControl>
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
             <Typography variant="body2" color="text.secondary">
-              Active filters:
+              Filtres actifs :
             </Typography>
-            {departmentFilter !== 'all' && (
+            {divisionFilter !== 'all' && (
               <Chip
-                label={`Department: ${departments.find(d => String(d.id) === departmentFilter)?.name || 'N/A'}`}
-                onDelete={() => setDepartmentFilter('all')}
+                label={`Organisme: ${divisions.find(d => String(d.id) === divisionFilter)?.name || 'N/A'}`}
+                onDelete={() => setDivisionFilter('all')}
                 color="primary"
                 variant="outlined"
               />
             )}
             {ageFilter !== 'all' && (
               <Chip
-                label={`Age: ${ageFilter === 'under30' ? 'Under 30' : ageFilter === '30to45' ? '30-45' : '45+'}`}
+                label={`Âge : ${
+                  ageFilter === 'under30' ? 'Moins de 30 ans' : ageFilter === '30to45' ? '30-45 ans' : '45+'
+                }`}
                 onDelete={() => setAgeFilter('all')}
                 color="primary"
                 variant="outlined"
               />
             )}
-            {sortBy !== 'name' && <Chip label={`Sorted by ${sortBy}`} onDelete={() => setSortBy('name')} color="secondary" variant="outlined" />}
+            {sortBy !== 'name' && <Chip label={`Trié par ${sortBy}`} onDelete={() => setSortBy('name')} color="secondary" variant="outlined" />}
             <Button onClick={handleResetFilters} size="small">
-              Reset
+              Réinitialiser
             </Button>
-            <FormControlLabel control={<Switch checked={denseRows} onChange={e => setDenseRows(e.target.checked)} color="primary" />} label="Compact rows" />
+            <FormControlLabel
+              control={<Switch checked={denseRows} onChange={e => setDenseRows(e.target.checked)} color="primary" />}
+              label="Lignes compactes"
+            />
           </Stack>
         </Stack>
       </Paper>
 
-      <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2 }}>
-        <Table size={denseRows ? 'small' : 'medium'}>
+      <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2, width: '100%', overflowX: 'auto' }}>
+        <Table size={denseRows ? 'small' : 'medium'} sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow sx={{ backgroundColor: '#f5f7fb' }}>
-              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2 }}>Employee</TableCell>
-              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2 }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2 }}>Department</TableCell>
-              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2 }}>Age</TableCell>
-              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2 }}>Contact</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 700, letterSpacing: 0.2 }}>
+              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2, minWidth: 200 }}>Employé</TableCell>
+              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2, minWidth: 150 }}>Poste</TableCell>
+              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2, minWidth: 200, display: { xs: 'none', md: 'table-cell' } }}>Email</TableCell>
+              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2, minWidth: 150 }}>Organisme</TableCell>
+              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2, minWidth: 80 }}>Âge</TableCell>
+              <TableCell sx={{ fontWeight: 700, letterSpacing: 0.2, minWidth: 120, display: { xs: 'none', md: 'table-cell' } }}>Contact</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700, letterSpacing: 0.2, minWidth: 250 }}>
                 Actions
               </TableCell>
             </TableRow>
@@ -438,11 +449,15 @@ const EmployeeList = () => {
                   key={employee.id}
                   hover
                   sx={{
+                    height: denseRows ? 56 : 72,
                     backgroundColor: idx % 2 === 0 ? '#fff' : '#f9fbff',
                     transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                     '&:hover': {
+                      backgroundColor: '#f0f4ff', // Improved hover color
                       transform: 'translateY(-2px)',
-                      boxShadow: '0 10px 25px rgba(15, 23, 42, 0.08)',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', // Softer shadow
+                      zIndex: 1, // Ensure row stays above others when transformed
+                      position: 'relative' // Needed for z-index
                     },
                   }}
                 >
@@ -464,29 +479,27 @@ const EmployeeList = () => {
                           {employee.firstName} {employee.lastName}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {employee.department?.name || 'Unassigned'}
+                          {employee.divisionName || 'Non attribué'}
                         </Typography>
                       </Box>
                     </Stack>
                   </TableCell>
-                  <TableCell>{employee.email}</TableCell>
-                  <TableCell>{employee.department?.name || 'Unassigned'}</TableCell>
-                  <TableCell>{employee.age}</TableCell>
                   <TableCell>
+                    <Typography variant="body2" fontWeight="medium">
+                      {employee.jobTemplateTitle || employee.jobTitle || '—'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                      <Stack direction="row" alignItems="center" spacing={0.5}>
+                          <EmailIcon fontSize="small" sx={{ fontSize: '1rem', color: 'text.secondary' }} />
+                          <Typography variant="body2" color="text.primary">{employee.email}</Typography>
+                      </Stack>
+                  </TableCell>
+                  <TableCell>{employee.divisionName || 'Non attribué'}</TableCell>
+                  <TableCell>{employee.age ? `${employee.age} ans` : '—'}</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Stack direction="row" spacing={1}>
-                      <Tooltip title="Email">
-                        <span>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => handleMailTo(employee.email)}
-                            sx={{ minWidth: 36, borderColor: '#1E3C72', color: '#1E3C72', '&:hover': { backgroundColor: '#1E3C72', color: '#fff' } }}
-                          >
-                            <EmailIcon fontSize="small" />
-                          </Button>
-                        </span>
-                      </Tooltip>
-                      <Tooltip title="Copy email">
+                      <Tooltip title="Copier l'email">
                         <span>
                           <Button
                             size="small"
@@ -501,21 +514,25 @@ const EmployeeList = () => {
                     </Stack>
                   </TableCell>
                   <TableCell align="right">
-                    <Stack direction="row" justifyContent="flex-end" spacing={1}>
-                      <Button variant="outlined" size="small" component={Link} to={`/edit-employee/${employee.id}`}>
-                        Edit
+                    <Stack direction="row" justifyContent="flex-end" spacing={1} flexWrap="nowrap"> {/* Changed wrap to nowrap */}
+                      <Button variant="outlined" size="small" component={Link} to={`/view-employee/${employee.id}`} sx={{ minWidth: 'auto', px: 1 }}>
+                        Voir
                       </Button>
-                      <Tooltip title="This will permanently remove the employee">
+                      <Button variant="outlined" size="small" component={Link} to={`/edit-employee/${employee.id}`} sx={{ minWidth: 'auto', px: 1 }}>
+                        Modifier
+                      </Button>
+                      <Tooltip title="Supprimer définitivement l'employé">
                         <span>
                           <Button
                             variant="contained"
-                            color="secondary"
+                            color="error" // Changed to error for better visual cue
                             size="small"
                             onClick={() => handleDelete(employee.id)}
                             disabled={deletingEmployeeId === employee.id}
                             startIcon={deletingEmployeeId === employee.id ? <CircularProgress size={16} /> : null}
+                            sx={{ minWidth: 'auto', px: 1 }}
                           >
-                            {deletingEmployeeId === employee.id ? 'Deleting...' : 'Delete'}
+                            {deletingEmployeeId === employee.id ? '...' : 'Supprimer'}
                           </Button>
                         </span>
                       </Tooltip>
@@ -525,11 +542,11 @@ const EmployeeList = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={7}>
                   <Box sx={{ textAlign: 'center', padding: '1.5rem' }}>
-                    <Typography variant="subtitle1">No employees match your filters.</Typography>
+                    <Typography variant="subtitle1">Aucun employé ne correspond à vos filtres.</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Try broadening your filters or add a new employee to get started.
+                      Essayez d'élargir vos filtres ou ajoutez un nouvel employé pour commencer.
                     </Typography>
                   </Box>
                 </TableCell>
