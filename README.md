@@ -27,7 +27,7 @@ Application complète de gestion d'employés et de départements avec une archit
 
 ## 🏗️ Architecture
 
-\`\`\`
+```
 ┌─────────────┐
 │   React     │  Port 3000
 │  Frontend   │
@@ -42,7 +42,7 @@ Application complète de gestion d'employés et de départements avec une archit
 │   MySQL     │  Port 3306
 │  Database   │
 └─────────────┘
-\`\`\`
+```
 
 ## 🚀 Démarrage Rapide
 
@@ -53,7 +53,7 @@ Application complète de gestion d'employés et de départements avec une archit
 
 ### Option 1 : Docker (Recommandé)
 
-\`\`\`bash
+```bash
 # Cloner le repository
 git clone https://github.com/VOTRE_USERNAME/Gestion_employee.git
 cd Gestion_employee
@@ -65,7 +65,7 @@ chmod +x build.sh deploy.sh
 
 # Ou avec Docker Compose
 docker-compose up -d
-\`\`\`
+```
 
 **Accès :**
 - Frontend : http://localhost:3000
@@ -76,7 +76,7 @@ docker-compose up -d
 
 #### Backend
 
-\`\`\`bash
+```bash
 cd backend
 
 # Configurer la base de données dans application.properties
@@ -85,11 +85,11 @@ cd backend
 # Build et démarrage
 mvn clean install
 mvn spring-boot:run
-\`\`\`
+```
 
 #### Frontend
 
-\`\`\`bash
+```bash
 cd frontend
 
 # Installer les dépendances
@@ -100,11 +100,11 @@ echo "REACT_APP_API_URL=http://localhost:8080" > .env
 
 # Démarrer
 npm start
-\`\`\`
+```
 
 ## 📁 Structure du Projet
 
-\`\`\`
+```
 Gestion_employee/
 ├── backend/                 # Application Spring Boot
 │   ├── src/
@@ -117,60 +117,60 @@ Gestion_employee/
 ├── frontend/                # Application React
 │   ├── src/
 │   │   ├── components/     # Composants React
-│   │   ├── services/      # Services API
-│   │   └── config/        # Configuration
+│   │   ├── services/       # Services API
+│   │   └── config/         # Configuration
 │   ├── Dockerfile
 │   ├── nginx.conf
 │   └── package.json
 │
-├── docker-compose.yml      # Orchestration Docker
+├── docker-compose.yml       # Orchestration Docker
 ├── database.sql            # Script SQL initial
 ├── build.sh                # Script de build
 ├── deploy.sh               # Script de déploiement
 └── README.md               # Ce fichier
-\`\`\`
+```
 
 ## 🔧 Configuration
 
 ### Variables d'Environnement
 
-**Backend** (\`application.properties\`) :
-\`\`\`properties
+**Backend** (`application.properties`) :
+```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/employee_management
 spring.datasource.username=root
 spring.datasource.password=votre_mot_de_passe
-\`\`\`
+```
 
-**Frontend** (\`.env\`) :
-\`\`\`env
+**Frontend** (`.env`) :
+```env
 REACT_APP_API_URL=http://localhost:8080
-\`\`\`
+```
 
 ### Base de Données
 
-\`\`\`bash
+```bash
 # Importer le schéma
 mysql -u root -p < database.sql
 
 # Ou via phpMyAdmin (XAMPP)
 # Importer database.sql
-\`\`\`
+```
 
 ## 📚 API Documentation
 
 Une fois le backend démarré, accédez à la documentation Swagger :
 - **URL** : http://localhost:8080/swagger-ui.html
 - **Endpoints disponibles** :
-  - \`/api/employees\` - Gestion des employés
-  - \`/api/departments\` - Gestion des départements
-  - \`/authenticate\` - Authentification
-  - \`/register\` - Inscription
+  - `/api/employees` - Gestion des employés
+  - `/api/departments` - Gestion des départements
+  - `/authenticate` - Authentification
+  - `/register` - Inscription
 
 ## 🐳 Docker
 
 ### Commandes Utiles
 
-\`\`\`bash
+```bash
 # Build des images
 docker-compose build
 
@@ -185,13 +185,13 @@ docker-compose down
 
 # Nettoyer (supprime volumes)
 docker-compose down -v
-\`\`\`
+```
 
 Pour plus de détails, consultez [GUIDE_DOCKER.md](GUIDE_DOCKER.md)
 
 ## 🧪 Tests
 
-\`\`\`bash
+```bash
 # Backend (JUnit)
 cd backend
 mvn test
@@ -199,7 +199,7 @@ mvn test
 # Frontend (Jest - si configuré)
 cd frontend
 npm test
-\`\`\`
+```
 
 ## 🛠️ Technologies Utilisées
 
@@ -227,30 +227,30 @@ npm test
 
 ## 📝 Scripts Disponibles
 
-- \`build.sh\` - Build des images Docker avec retry
-- \`deploy.sh\` - Déploiement automatisé
-- \`prepare-images.sh\` - Préparation images pour build hors ligne
+- `build.sh` - Build des images Docker avec retry
+- `deploy.sh` - Déploiement automatisé
+- `prepare-images.sh` - Préparation images pour build hors ligne
 
 ## 🐛 Dépannage
 
 ### Problème de timeout npm
 Les timeouts sont configurés dans le Dockerfile. Si problème persiste :
-\`\`\`bash
+```bash
 # Augmenter les timeouts dans frontend/Dockerfile
 ENV NPM_CONFIG_FETCH_TIMEOUT=600000
-\`\`\`
+```
 
 ### Problème de connexion MySQL
-\`\`\`bash
+```bash
 # Vérifier que MySQL est démarré
 docker-compose ps mysql
 
 # Vérifier les logs
 docker-compose logs mysql
-\`\`\`
+```
 
 ### Problème CORS
-Vérifier la configuration CORS dans \`backend/src/.../config/CorsConfig.java\`
+Vérifier la configuration CORS dans `backend/src/.../config/CorsConfig.java`
 
 Pour plus de solutions, voir [GUIDE_DOCKER.md](GUIDE_DOCKER.md)
 
@@ -259,14 +259,14 @@ Pour plus de solutions, voir [GUIDE_DOCKER.md](GUIDE_DOCKER.md)
 Les contributions sont les bienvenues ! Pour contribuer :
 
 1. Fork le projet
-2. Créer une branche (\`git checkout -b feature/AmazingFeature\`)
-3. Commit les changements (\`git commit -m 'Add some AmazingFeature'\`)
-4. Push vers la branche (\`git push origin feature/AmazingFeature\`)
+2. Créer une branche (`git checkout -b feature/AmazingFeature`)
+3. Commit les changements (`git commit -m 'Add some AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
 5. Ouvrir une Pull Request
 
 ## 📄 Licence
 
-Ce projet est sous licence MIT.
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
 ## 👤 Auteur
 
@@ -285,3 +285,4 @@ Ce projet est sous licence MIT.
 
 ⭐ Si ce projet vous a aidé, n'hésitez pas à lui donner une étoile !
 
+📅 Dernière mise à jour : $(date +'%Y-%m-%d')
