@@ -272,7 +272,7 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 
 **Steven Christophino**
 - Email: stevenchristophino@gmail.com
-- GitHub: [Tnegrall](https://github.com/tnegrall)
+- GitHub: [@votre-username](https://github.com/votre-username)
 
 ## 🙏 Remerciements
 
