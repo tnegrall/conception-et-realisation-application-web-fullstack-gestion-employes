@@ -285,4 +285,3 @@ Ce projet est sous licence MIT.
 
 ⭐ Si ce projet vous a aidé, n'hésitez pas à lui donner une étoile !
 
-📅 Dernière mise à jour : $(date +'%Y-%m-%d %H:%M:%S')
