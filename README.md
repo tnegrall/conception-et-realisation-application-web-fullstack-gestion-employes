@@ -272,7 +272,7 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 
 **Steven Christophino**
 - Email: stevenchristophino@gmail.com
-- GitHub: [@votre-username]([https://github.com/votre-username](https://github.com/tnegrall/conception-et-realisation-application-web-fullstack-gestion-employes))
+- GitHub: [@votre-username](https://github.com/votre-username)
 
 ## 🙏 Remerciements
 
@@ -285,4 +285,4 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 
 ⭐ Si ce projet vous a aidé, n'hésitez pas à lui donner une étoile !
 
-
+📅 Dernière mise à jour : $(date +'%Y-%m-%d')
